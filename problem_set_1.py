@@ -31,9 +31,8 @@ def evens_and_odds(n: int) -> dict:
             sum_evens += i
         else:
             sum_odds += i
-    sums_dict = {'evens': sum_evens, 'odds': sum_odds}
 
-    return sums_dict
+    return {'evens': sum_evens, 'odds': sum_odds}
 
 def time_diff(date_1: str, date_2: str, out: str="float") -> Union[str,float]:
     """
@@ -46,12 +45,10 @@ def time_diff(date_1: str, date_2: str, out: str="float") -> Union[str,float]:
     dt_2 = datetime.strptime(date_2, "%Y-%m-%d")
     delta = dt_1 - dt_2
 
-    if out == "float":
-        output = abs(delta.days)
-    elif out == "string":
-        output = f"There are {abs(delta.days)} days between the two dates."
-
-    return output
+    if out == "string":
+        return f"There are {abs(delta.days)} days between the two dates."
+    else:
+        return abs(delta.days)
 
 def reverse(in_list: list) -> list:
     """
@@ -65,10 +62,28 @@ def reverse(in_list: list) -> list:
 
 def prob_k_heads(n: int, k: int) -> float:
     """
-    Exercise 5 - 
+    Exercise 5 - Takes integers k and n, assuming n is larger than k, 
+    and returns the probability of seeing k successes in n tries of flipping a 
+    coin. This is calculated using the binomial probability mass function.
     """
+    # prob = (n choose k) * (success prob)^k * (fail prob)^n-k
+    # Calculating binomial coefficient
+    n_fact = 1
+    k_fact = 1
+    diff_fact = 1
+    for i in range(1, n+1):
+        n_fact *= i
+    for i in range(1, k+1):
+        k_fact *= i
+    for i in range(1, (n-k)+1):
+        diff_fact *= i
+    n_choose_k = n_fact / (k_fact * diff_fact)
 
-    return None
+    # Calculating the probability of any one permutation each flip
+    prob_successes = (1/2) ** k
+    prob_failures = (1/2) ** (n - k)
+
+    return n_choose_k * prob_successes * prob_failures
 
 def main():
     """
@@ -89,6 +104,10 @@ def main():
     print(reverse([]))
     print(reverse(['a']))
     print(reverse(['a', 'b', 'c', 'd', 'e', 'f']))
+
+    # Exercise 5
+    print(prob_k_heads(1, 1))
+    print(prob_k_heads(10, 3))
 
 if __name__ == "__main__":
     main()
