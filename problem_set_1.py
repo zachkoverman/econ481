@@ -47,8 +47,7 @@ def time_diff(date_1: str, date_2: str, out: str="float") -> Union[str,float]:
 
     if out == "string":
         return f"There are {abs(delta.days)} days between the two dates."
-    else:
-        return abs(delta.days)
+    return abs(delta.days)
 
 def reverse(in_list: list) -> list:
     """
