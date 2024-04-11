@@ -43,21 +43,33 @@ def simulate_data(seed: int=481) -> tuple:
     
     return y_arr, x_arr
 
+def negative_ll(beta: np.array, y_arr: np.array, x_arr: np.array) -> np.array:
+    """
+    (Supplementary) - 
+    """
+    beta = beta.reshape((-1, 1)) # fixes tiny coef problem - need (4,1) not (4,)
+    # P(error for each data point) calculated with p.m.f. for N(0, 1)
+    indiv_error_prob = (1 / (np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((y_arr - x_arr @ beta) ** 2))
+    total_error_prob = -1 * np.sum(np.log(indiv_error_prob))
+    return total_error_prob
+
 def estimate_mle(y: np.array, X: np.array) -> np.array:
     """
     Exercise 2 - 
     """
-    
-    # get fitted residuals
-    # get probability for each redisual
-    # transform it into log likelihood function
-    # minimize that like before
+    betas_array = np.ones(4)
+    X = np.c_[np.ones(X.shape[0]).reshape(-1, 1), X]
 
-    return None
+    min_ll_coef = scipy.optimize.minimize(fun=negative_ll, \
+                                          args=(y, X), \
+                                          x0=betas_array, \
+                                          method='Nelder-Mead')
+
+    return min_ll_coef
 
 def sse(beta: np.array, y_arr: np.array, x_arr: np.array) -> np.array:
     """
-    (Supplementary)
+    (Supplementary) Returns the sum of squared error for given arrays of 
     """
     beta = beta.reshape((-1, 1)) # fixes tiny coef problem - need (4,1) not (4,)
     return np.sum((y_arr - (x_arr @ beta)) ** 2)
@@ -69,12 +81,12 @@ def estimate_ols(y: np.array, X: np.array) -> np.array:
     betas_array = np.ones(4)
     X = np.c_[np.ones(X.shape[0]).reshape(-1, 1), X]
 
-    min_coef = scipy.optimize.minimize(fun=sse, \
+    min_sse_coef = scipy.optimize.minimize(fun=sse, \
                                        args=(y, X), \
                                        x0=betas_array, \
                                        method='Nelder-Mead')
 
-    return min_coef
+    return min_sse_coef
 
 def main():
     """
@@ -89,6 +101,8 @@ def main():
     print(f'Mean of simulate X array: {np.mean(sim_data[1])} \n')
 
     # Exercise 2
+    ex_2_coef_array = estimate_mle(sim_data[0], sim_data[1]).x
+    print(f'Coefficients estimated with MLE: {ex_2_coef_array}')
 
     # Exercise 3
     ex_3_coef_array = estimate_ols(sim_data[0], sim_data[1]).x
