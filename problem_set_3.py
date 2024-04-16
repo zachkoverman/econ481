@@ -52,8 +52,35 @@ def n_null(df: pd.DataFrame, col: str) -> int:
     """
     Exercise 3 - 
     """
+    is_null = pd.isna(df[col])
+    nulls_series = df[col][is_null]
+    nulls_length = nulls_series.size
 
+    return nulls_length
 
+def clean_data(emissions_data: pd.DataFrame,
+               parent_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Exercise 4 - 
+    """
+    merged_df = pd.merge(emissions_data,
+                         parent_data,
+                         left_on=['year', 'Facility Id'],
+                         right_on=['year', 'GHGRP FACILITY ID'],
+                         how='left')
+    subset_columns = ['Facility Id', 'year', 'State',
+                      'Industry Type (sectors)', 
+                      'Total reported direct emissions', 'PARENT CO. STATE', 
+                      'PARENT CO. PERCENT OWNERSHIP']
+    merged_df = merged_df[subset_columns]
+    merged_df.columns = [c.lower() for c in merged_df.columns]
+
+    return merged_df
+
+def aggregate_emissions(df: pd.DataFrame, group_vars: list) -> pd.DataFrame:
+    """
+    Exercise 5 - 
+    """
     return None
 
 def main():
@@ -62,12 +89,28 @@ def main():
     problem set.
     """
     # Exercise 1
-    print(import_yearly_data([2021, 2022]).head(5))
-    print(import_yearly_data([2021, 2022]).describe())
+    yearly_data_df = import_yearly_data([2021, 2022])
+    print("Head and descriptive statistics for yearly emissions DataFrame")
+    print(yearly_data_df.head(5))
+    print(yearly_data_df.describe())
 
     # Exercise 2
-    print(import_parent_companies([2021, 2022]).head(5))
-    print(import_parent_companies([2021, 2022]).describe())
+    parent_companies_df = import_parent_companies([2021, 2022])
+    print("\nHead and descriptive statistics for parent companies DataFrame")
+    print(parent_companies_df.head(5))
+    print(parent_companies_df.describe())
+
+    # Exercise 3
+    print('\nNumber of null values for Facility ID: ' \
+          f'{n_null(parent_companies_df, "GHGRP FACILITY ID")}')
+    print('\nNumber of null values for FRS ID: ' \
+          f'{n_null(parent_companies_df, "FRS ID (FACILITY)")}')
+
+    # Exercise 4
+    print(clean_data(yearly_data_df, parent_companies_df))
+
+    # Exercise 5
+
 
 if __name__ == "__main__":
     main()
