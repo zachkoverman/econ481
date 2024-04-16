@@ -81,7 +81,14 @@ def aggregate_emissions(df: pd.DataFrame, group_vars: list) -> pd.DataFrame:
     """
     Exercise 5 - 
     """
-    return None
+    grouped_df = df.groupby(group_vars)[['total reported direct emissions', \
+                                         'parent co. percent ownership']]\
+                   .agg(['min', 'median', 'mean', 'max'])\
+                   .sort_values(by=('total reported direct emissions', \
+                                    'mean'), \
+                                ascending=False)
+
+    return grouped_df
 
 def main():
     """
@@ -89,28 +96,37 @@ def main():
     problem set.
     """
     # Exercise 1
+    print('==============\n  Exercise 1\n==============\n')
     yearly_data_df = import_yearly_data([2021, 2022])
-    print("Head and descriptive statistics for yearly emissions DataFrame")
-    print(yearly_data_df.head(5))
-    print(yearly_data_df.describe())
+    print("Head and descriptive statistics for yearly emissions DataFrame:")
+    print(f'\n{yearly_data_df.head(5)}')
+    print(f'\n{yearly_data_df.describe()}')
 
     # Exercise 2
+    print('\n==============\n  Exercise 2\n==============\n')
     parent_companies_df = import_parent_companies([2021, 2022])
-    print("\nHead and descriptive statistics for parent companies DataFrame")
-    print(parent_companies_df.head(5))
-    print(parent_companies_df.describe())
+    print("Head and descriptive statistics for parent companies DataFrame:")
+    print(f'\n{parent_companies_df.head(5)}')
+    print(f'\n{parent_companies_df.describe()}')
 
     # Exercise 3
-    print('\nNumber of null values for Facility ID: ' \
+    print('\n==============\n  Exercise 3\n==============\n')
+    print('Number of null values for Facility ID: ' \
           f'{n_null(parent_companies_df, "GHGRP FACILITY ID")}')
     print('\nNumber of null values for FRS ID: ' \
           f'{n_null(parent_companies_df, "FRS ID (FACILITY)")}')
 
     # Exercise 4
-    print(clean_data(yearly_data_df, parent_companies_df))
+    print('\n==============\n  Exercise 4\n==============\n')
+    cleaned_data = clean_data(yearly_data_df, parent_companies_df)
+    print(f'First 5 rows of cleaned data:\n{cleaned_data.head(5)}')
 
     # Exercise 5
+    print('\n==============\n  Exercise 5\n==============\n')
+    agg_data = aggregate_emissions(cleaned_data, ['state'])
+    print(f'Emissions aggregations:\n{agg_data}')
 
+    # Optional Bonus
 
 if __name__ == "__main__":
     main()
