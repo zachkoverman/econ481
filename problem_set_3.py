@@ -19,7 +19,9 @@ def github() -> str:
 
 def import_yearly_data(years: list) -> pd.DataFrame:
     """
-    Exercise 1 - 
+    Exercise 1 - Reads Excel files containing emissions data from year(s) 
+    specified in a given list. Returns one DataFrame object concatenating the
+    data together, with the corresponding year added as a new column.
     """
     df_list = []
     for target_year in years:
@@ -34,7 +36,11 @@ def import_yearly_data(years: list) -> pd.DataFrame:
 
 def import_parent_companies(years: list) -> pd.DataFrame:
     """
-    Exercise 2 - 
+    Exercise 2 - Reads an Excel file containing information on polluting 
+    comapnies. Sheets are selected according to years passed in a list and 
+    concatenated together. Drops any rows where all values are null. Returns 
+    one DataFrame object with the concatenated data and the corresponding year 
+    added as a new column.
     """
     df_list = []
     for target_year in years:
@@ -50,7 +56,8 @@ def import_parent_companies(years: list) -> pd.DataFrame:
 
 def n_null(df: pd.DataFrame, col: str) -> int:
     """
-    Exercise 3 - 
+    Exercise 3 - Takes a DataFrame and column name and returns the number of
+    null values in the specified column.
     """
     is_null = pd.isna(df[col])
     nulls_series = df[col][is_null]
@@ -61,7 +68,9 @@ def n_null(df: pd.DataFrame, col: str) -> int:
 def clean_data(emissions_data: pd.DataFrame,
                parent_data: pd.DataFrame) -> pd.DataFrame:
     """
-    Exercise 4 - 
+    Exercise 4 - Takes two DataFrames, joins them, then subsets to a handful of
+    columns and converts the names to lowercase. Returns the processed 
+    DataFrame.
     """
     merged_df = pd.merge(emissions_data,
                          parent_data,
@@ -79,7 +88,10 @@ def clean_data(emissions_data: pd.DataFrame,
 
 def aggregate_emissions(df: pd.DataFrame, group_vars: list) -> pd.DataFrame:
     """
-    Exercise 5 - 
+    Exercise 5 - Groups a given DataFrame by given variables, aggregating to 
+    calculate the mininmum, median, mean, and maximum values for direct 
+    emissions and parent co. ownership. Returns the grouped data in descending
+    order of mean direct emissions.
     """
     grouped_df = df.groupby(group_vars)[['total reported direct emissions', \
                                          'parent co. percent ownership']]\
@@ -124,9 +136,16 @@ def main():
     # Exercise 5
     print('\n==============\n  Exercise 5\n==============\n')
     agg_data = aggregate_emissions(cleaned_data, ['state'])
-    print(f'Emissions aggregations:\n{agg_data}')
+    print(f'Emissions aggregations (ordered by mean emissions):\n{agg_data}')
 
     # Optional Bonus
+    print('\n==============\nOptional Bonus\n==============\n')
+    agg_data = aggregate_emissions(cleaned_data, ['state'])
+    data_median = agg_data.sort_values(by=('total reported direct emissions',
+                                           'median'), 
+                                       ascending=False)
+    print('Emissions aggregations (ordered by median emissions):'\
+          f'\n{data_median}')
 
 if __name__ == "__main__":
     main()
