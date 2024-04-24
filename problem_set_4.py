@@ -60,7 +60,9 @@ def plot_close(df: pd.DataFrame,
 
 def autoregress(df: pd.DataFrame) -> float:
     """
-    Exercise 3 - 
+    Exercise 3 - Takes a DataFrame and performs an OLS autoregression for daily 
+    TSLA closing prices, with no intercept term. Returns the t-statistic for 
+    the estimated coefficient on lagged change in price.
     """
     df['Lag_Close'] = df['Close'].shift(periods=1, freq='D')
     df['Diff'] = df['Close'] - df['Lag_Close']
@@ -74,11 +76,10 @@ def autoregress(df: pd.DataFrame) -> float:
 
 def autoregress_logit(df: pd.DataFrame) -> float:
     """
-    Exercise 4 - 
-
-
-    # Left hand side needs to be indicator variable whether diff is > 0 or not - create new column
-    # regress (indicator) ~ lag diff
+    Exercise 4 - Takes a DataFrame and performs a logit autoregression for the 
+    probability that a closing price will be greater than that of the day 
+    before, with no intercept term. Returns the t-statistic for the estimated 
+    coefficient on lagged change in price.
     """
     df['Diff_Positive'] = df['Diff'] > 0
     df['Diff_Positive'] = df['Diff_Positive'].astype(int)
@@ -93,7 +94,8 @@ def autoregress_logit(df: pd.DataFrame) -> float:
 
 def plot_delta(df: pd.DataFrame) -> None:
     """
-    Exercise 5 - 
+    Exercise 5 - Takes a DataFrame and plots daily change in closing price for
+    the whole date range of the DataFrame. 
     """
     # Plotting figure and adjusting details
     fig = plt.figure()
