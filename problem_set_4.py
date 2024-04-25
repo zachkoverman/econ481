@@ -7,7 +7,6 @@ Problem Set 4
 This file contains functions written as exercises for Problem Set 4 in
 ECON 481 - Data Science Computing for Economics
 """
-#%%
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -70,7 +69,7 @@ def autoregress(df: pd.DataFrame) -> float:
 
     ols_model = smf.ols('Diff ~ Lag_Diff -1', data=df, missing='drop')
     ols_results = ols_model.fit(cov_type='HC1')
-    t_stat_beta_0 = ols_results.tvalues
+    t_stat_beta_0 = ols_results.tvalues['Lag_Diff']
 
     return t_stat_beta_0
 
@@ -81,14 +80,16 @@ def autoregress_logit(df: pd.DataFrame) -> float:
     before, with no intercept term. Returns the t-statistic for the estimated 
     coefficient on lagged change in price.
     """
+    df['Lag_Close'] = df['Close'].shift(periods=1, freq='D')
+    df['Diff'] = df['Close'] - df['Lag_Close']
     df['Diff_Positive'] = df['Diff'] > 0
     df['Diff_Positive'] = df['Diff_Positive'].astype(int)
-    df['Lag_Close'] = df['Close'].shift(periods=1, freq="D")
+    df['Lag_Diff'] = df['Diff'].shift(periods=1, freq='D')
 
     logit_results = smf.logit('Diff_Positive ~ Lag_Diff -1',
                               data=df,
                               missing='drop').fit()
-    t_stat_beta_0 = logit_results.tvalues
+    t_stat_beta_0 = logit_results.tvalues['Lag_Diff']
 
     return t_stat_beta_0
 
@@ -137,5 +138,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# %%
