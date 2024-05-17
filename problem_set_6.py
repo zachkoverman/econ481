@@ -99,71 +99,23 @@ def win_perc_by_timestamp() -> str:
                startTime,
                endTime,
                julianday(endTime) - julianday(startTime) AS length
-          FROM items),
-    SELECT 
+          FROM items)
+    SELECT (CAST(1 + ((julianday(t.endTime) - julianday(s.bidTime)) / t.length) * 10 
+                AS INTEGER)) AS timestamp_bin,
+           SUM(isWinningBid) / COUNT(isWinningBid) AS win_perc
+      FROM (SELECT itemId,
+                   bidTime,
+                   (CASE WHEN MAX(bidAmount) 
+                              OVER (PARTITION BY itemId) = bidAmount
+                         THEN 1.0
+                         ELSE 0.0
+                         END) AS isWinningBid
+              FROM bids) AS s
+           INNER JOIN t ON t.itemId = s.itemId
+     GROUP BY timestamp_bin
     """
 
-    yesterday_query = """
-    WITH t AS (
-            SELECT itemId,
-                startTime,
-                endTime,
-                julianday(endTime) - julianday(startTime) AS length
-            FROM items),
-        w AS (
-            SELECT itemId,
-                (CASE WHEN MAX(bidAmount) OVER (PARTITION BY itemId) = bidAmount
-                     THEN 1
-                     ELSE 0
-                     END) AS isWinningBid
-            FROM bids
-        )
-    SELECT b.itemId,
-        b.bidTime,
-        t.startTime,
-        t.endTime,
-        (julianday(endTime) - julianday(bidTime)) / t.length AS time_norm,
-        b.bidAmount,
-        w.isWinningBid,
-        CAST(1 + ((julianday(endTime) - julianday(bidTime)) / t.length) * 10 AS INTEGER) AS intBin,
-        CASE
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.1
-                THEN 1
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.1
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.2
-                THEN 2
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.2
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.3
-                THEN 3
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.3
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.4
-                THEN 4
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.4
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.5
-                THEN 5
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.5
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.6
-                THEN 6
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.6
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.7
-                THEN 7
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.7
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.8
-                THEN 8
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.8
-                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.9
-                THEN 9
-            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.9
-                AND (julianday(endTime) - julianday(bidTime)) / t.length <= 1
-                THEN 10
-            END AS timestamp_bin
-    FROM bids AS b
-        INNER JOIN w ON b.itemId = w.itemId
-        INNER JOIN t ON w.itemId = t.itemId
-    """
-
-    return yesterday_query
+    return query
 
 
 class DataBase:
