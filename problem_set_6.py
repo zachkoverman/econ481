@@ -7,6 +7,10 @@ Problem Set 6
 This file contains functions written as exercises for Problem Set 6 in
 ECON 481 - Data Science Computing for Economics
 """
+import pandas as pd
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
 
 def github() -> str:
     """
@@ -15,12 +19,221 @@ def github() -> str:
     """
     return "https://github.com/zachkoverman/econ481/blob/main/problem_set_6.py"
 
+
+def std() -> str:
+    """
+    Exercise 1 -
+    """
+    query = """
+    WITH s AS (
+        SELECT itemId, AVG(bidAmount) OVER (PARTITION BY itemId) AS bidAvg
+        FROM bids
+    )
+    SELECT b.itemId AS itemId,
+        SQRT((SUM(POW(b.bidAmount - s.bidAvg, 2))) / (COUNT(b.bidAmount)) - 1) AS std
+    FROM bids AS b LEFT JOIN s ON b.itemId = s.itemId
+    GROUP BY b.itemId
+    HAVING COUNT(b.itemId) > 1 AND std IS NOT NULL
+    """
+
+    return query
+
+
+def bidder_spend_frac() -> str:
+    """
+    Exercise 2 - 
+    """
+    query = """
+    WITH s AS (
+        SELECT itemId,
+            bidderName,
+            MAX(bidAmount) AS highBid,
+            (CASE WHEN 
+                MAX(bidAmount) OVER (PARTITION BY itemId) = bidAmount 
+                THEN MAX(bidamount) 
+                ELSE 0 END) AS spent
+        FROM bids
+        GROUP BY itemId, bidderName
+    )
+    SELECT bidderName,
+        SUM(spent) AS total_spend,
+        SUM(highBid) AS total_bids,
+        (SUM(spent) / SUM(highBid)) AS spend_frac
+    FROM s
+    GROUP BY bidderName
+    """
+
+    return query
+
+
+def min_increment_freq() -> str:
+    """
+    Exercise 3 - 
+    """
+    query = """
+    WITH s AS (
+        SELECT (
+            CASE WHEN (bidAmount - LAG(b.bidAmount) 
+                       OVER (PARTITION BY b.itemId
+                             ORDER BY b.bidTime)) = i.bidIncrement
+            THEN 1.0
+            ELSE 0.0
+            END) AS isMinBid
+        FROM bids AS b 
+            INNER JOIN items AS i ON b.itemId = i.itemId
+        WHERE isBuyNowUsed = 0)
+    SELECT SUM(isMinBid) / COUNT(isMinBid) AS freq
+    FROM s
+    """
+
+    return query
+
+
+def win_perc_by_timestamp() -> str:
+    """
+    Exercise 4 -
+    """
+    query = """
+    WITH t AS (
+        SELECT itemId,
+               startTime,
+               endTime,
+               julianday(endTime) - julianday(startTime) AS length
+          FROM items),
+    SELECT 
+    """
+
+    yesterday_query = """
+    WITH t AS (
+            SELECT itemId,
+                startTime,
+                endTime,
+                julianday(endTime) - julianday(startTime) AS length
+            FROM items),
+        w AS (
+            SELECT itemId,
+                (CASE WHEN MAX(bidAmount) OVER (PARTITION BY itemId) = bidAmount
+                     THEN 1
+                     ELSE 0
+                     END) AS isWinningBid
+            FROM bids
+        )
+    SELECT b.itemId,
+        b.bidTime,
+        t.startTime,
+        t.endTime,
+        (julianday(endTime) - julianday(bidTime)) / t.length AS time_norm,
+        b.bidAmount,
+        w.isWinningBid,
+        CAST(1 + ((julianday(endTime) - julianday(bidTime)) / t.length) * 10 AS INTEGER) AS intBin,
+        CASE
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.1
+                THEN 1
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.1
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.2
+                THEN 2
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.2
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.3
+                THEN 3
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.3
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.4
+                THEN 4
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.4
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.5
+                THEN 5
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.5
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.6
+                THEN 6
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.6
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.7
+                THEN 7
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.7
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.8
+                THEN 8
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.8
+                AND (julianday(endTime) - julianday(bidTime)) / t.length < 0.9
+                THEN 9
+            WHEN (julianday(endTime) - julianday(bidTime)) / t.length >= 0.9
+                AND (julianday(endTime) - julianday(bidTime)) / t.length <= 1
+                THEN 10
+            END AS timestamp_bin
+    FROM bids AS b
+        INNER JOIN w ON b.itemId = w.itemId
+        INNER JOIN t ON w.itemId = t.itemId
+    """
+
+    return yesterday_query
+
+
+class DataBase:
+    """
+    This class allows users to create a database from a .db file and pass 
+    strings to query it. 
+    """
+
+    def __init__(self, loc: str, db_type: str = 'sqlite') -> None:
+        """
+        Initializes the class and creates a connection to the database.
+        """
+        self.loc = loc
+        self.db_type = db_type
+        self.engine = create_engine(f'{self.db_type}:///{self.loc}')
+
+    def query(self, q: str) -> pd.DataFrame:
+        """
+        Takes a string containing a SQL query, queries the database, and 
+        returns a DataFrame containing the output of the query.
+        """
+        with Session(self.engine) as session:
+            df = pd.read_sql(q, session.bind)
+        return df
+
+
 def main():
     """
     Calls functions to demonstrate my solutions to the exercises in this 
     problem set.
     """
-    pass
+    # Setting up Database object
+    path = '/Users/zachkoverman/Desktop/School/Senior Year/ECON 481 - Data '\
+           'Science Computing for Economics/datasets/auctions.db'
+    auctions = DataBase(path)
+
+    # Calling functions to query auctions database
+    # Exploration
+    q_bids = "SELECT * FROM bids LIMIT 5"
+    print(auctions.query(q_bids).columns)
+    print(auctions.query(q_bids))
+    q_items = "SELECT * FROM items LIMIT 5"
+    print(auctions.query(q_items).columns)
+    q_items_2 = "SELECT bidIncrement, isBuyNowUsed, itemId FROM items LIMIT 5"
+    print(auctions.query(q_items_2))
+
+    # Exercise 1
+    q_e1 = std()
+    query_df_e1 = auctions.query(q_e1)
+    print(f'Exercise 1:\n{query_df_e1.head(15)}')
+    print(f'Number of rows: {len(query_df_e1)}\n')
+
+    # Exercise 2
+    q_e2 = bidder_spend_frac()
+    query_df_e2 = auctions.query(q_e2)
+    print(f'Exercise 2:\n{query_df_e2.head(15)}')
+    print(f'Number of rows: {len(query_df_e2)}\n')
+
+    # Exercise 3
+    q_e3 = min_increment_freq()
+    query_df_e3 = auctions.query(q_e3)
+    print(f'Exercise 3:\n{query_df_e3.head(40)}')
+    print(f'Number of rows: {len(query_df_e3)}\n')
+
+    # Exercise 4
+    q_e4 = win_perc_by_timestamp()
+    query_df_e4 = auctions.query(q_e4)
+    print(f'Exercise 4:\n{query_df_e4.head(15)}')
+    print(f'Number of rows: {len(query_df_e4)}\n')
+
 
 if __name__ == '__main__':
     main()
