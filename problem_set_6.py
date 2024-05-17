@@ -22,7 +22,9 @@ def github() -> str:
 
 def std() -> str:
     """
-    Exercise 1 -
+    Exercise 1 - Returns a string containing a SQL query for the auctions.db 
+    database to get the ID of each item and the standard deviation of all bids 
+    for that item.
     """
     query = """
     WITH s AS (
@@ -30,7 +32,8 @@ def std() -> str:
         FROM bids
     )
     SELECT b.itemId AS itemId,
-        SQRT((SUM(POW(b.bidAmount - s.bidAvg, 2))) / (COUNT(b.bidAmount)) - 1) AS std
+        SQRT((SUM(POW(b.bidAmount - s.bidAvg, 2))) / (COUNT(b.bidAmount)) - 1) 
+            AS std
     FROM bids AS b LEFT JOIN s ON b.itemId = s.itemId
     GROUP BY b.itemId
     HAVING COUNT(b.itemId) > 1 AND std IS NOT NULL
@@ -41,7 +44,11 @@ def std() -> str:
 
 def bidder_spend_frac() -> str:
     """
-    Exercise 2 - 
+    Exercise 2 - Returns a string containing a SQL query for the auctions.db 
+    database to get the name of each bidder in the database, as well as the
+    total money they spent, the total amount of money bid as their highest bids
+    for all items, and the fraction of the total money bid that they ended up
+    spending.
     """
     query = """
     WITH s AS (
@@ -68,7 +75,9 @@ def bidder_spend_frac() -> str:
 
 def min_increment_freq() -> str:
     """
-    Exercise 3 - 
+    Exercise 3 - Returns a string containing a SQL query for the auctions.db 
+    database to get the fraction of bids placed that only increased the highest
+    bid by the minimum increment.
     """
     query = """
     WITH s AS (
@@ -91,7 +100,10 @@ def min_increment_freq() -> str:
 
 def win_perc_by_timestamp() -> str:
     """
-    Exercise 4 -
+    Exercise 4 - Returns a string containing a SQL query for the auctions.db 
+    database to sort the bids into bins based on the time they were placed 
+    relative to the end of the auction, then calculate the rate at which bids
+    from each bin won their auctions.
     """
     query = """
     WITH t AS (
@@ -100,8 +112,8 @@ def win_perc_by_timestamp() -> str:
                endTime,
                julianday(endTime) - julianday(startTime) AS length
           FROM items)
-    SELECT (CAST(1 + ((julianday(t.endTime) - julianday(s.bidTime)) / t.length) * 10 
-                AS INTEGER)) AS timestamp_bin,
+    SELECT (CAST(1 + ((julianday(t.endTime) - julianday(s.bidTime)) / t.length) 
+                * 10 AS INTEGER)) AS timestamp_bin,
            SUM(isWinningBid) / COUNT(isWinningBid) AS win_perc
       FROM (SELECT itemId,
                    bidTime,
